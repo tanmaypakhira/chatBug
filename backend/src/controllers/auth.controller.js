@@ -71,6 +71,10 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   const {email, password} = req.body;
 
+  if(!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
   try {
     //logic for login
 
@@ -81,7 +85,7 @@ export const login = async (req, res) => {
 
     const isPassword = await bcrypt.compare(password, user.password);
 
-    if(!email || !isPassword) {
+    if(!isPassword) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
