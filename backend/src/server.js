@@ -4,7 +4,7 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/auth.route.js';
-import mesaageRoutes from './routes/message.route.js';
+import messageRoutes from './routes/message.route.js';
 import { connectDB } from './lib/db.js';
 import { ENV } from './lib/env.js';
 
@@ -17,7 +17,7 @@ app.use(express.json());   //req.body
 app.use(cookieParser()); //req.cookies
 
 app.use("/api/auth", authRoutes);
-app.use("/api/messages", mesaageRoutes);
+app.use("/api/messages", messageRoutes);
 
 //make ready for production
 if (ENV.NODE_ENV === 'production') {
