@@ -4,6 +4,7 @@ import { useChatStore } from "../store/useChatStore";
 import ChatHeader from "./ChatHeader";
 import NoChatHistoryPlaceholder from "./NoChatsHistoryPlaceholder";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
+import MessageInput from "./MessageInput";
 
 
 function ChatContainer() {
@@ -15,11 +16,22 @@ function ChatContainer() {
   } = useChatStore();
 
   const { authUser } = useAuthStore();
+  const messageEndRef = useRef(null);
 
   useEffect(() => {
     getMessagesByUserId(selectedUser._id);
-    },
-  [selectedUser, getMessagesByUserId]);
+  }, [selectedUser, getMessagesByUserId]);
+  //   subscribeToMessages();
+
+  //   // clean up
+  //   return () => unsubscribeFromMessages();
+  // }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages]);
+
+  useEffect(() => {
+    if (messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   return (
     <>
@@ -52,11 +64,15 @@ function ChatContainer() {
                 </div>
               </div>
             ))}
+            {/* scroll target */}
+            <div ref={messageEndRef} />
           </div>
         ): isMessagesLoading ? <MessagesLoadingSkeleton /> : (
           <NoChatHistoryPlaceholder name={selectedUser.fullname} />
         )}
       </div>
+
+      <MessageInput />
     </>
   );
 }
