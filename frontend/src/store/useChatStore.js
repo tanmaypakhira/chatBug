@@ -3,6 +3,8 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 
+const notificationSound = new Audio("/sounds/notification.mp3")
+
 export const useChatStore = create(( set, get ) => ({
     allContacts: [],
     chats: [],
@@ -84,5 +86,64 @@ export const useChatStore = create(( set, get ) => ({
       set({ messages: messages });
       toast.error(error.response?.data?.message || "Something went wrong");
     }
-  },
+    },
+
+    // subscribeToMessages: () => {
+    //   const { selectedUser, isSoundEnabled } = get();
+    //   if(!selectedUser) return;
+
+    //   const socket = useAuthStore.getState().socket;
+
+    //   socket.on("newMessgae", (newMessage) => {
+    //     const currentMessage = get().messages;
+    //     set({ messages: [...currentMessage, newMessage]});
+
+    //     if(isSoundEnabled) {
+    //       notificationSound.currentTime = 0; //reset to start
+    //       notificationSound.play().catch((e) => console.log("Auto play failed:", e));
+    //     }
+    //   });
+    // },
+
+    // unsubscribeFromMessages: () => {
+    //   const socket = useAuthStore.getState().socket;
+    //   socket.off("newMessage");
+    // },
+
+    subscribeToMessages: () => {
+  const socket = useAuthStore.getState().socket;
+  const { selectedUser, isSoundEnabled } = get();
+
+  if (!socket || !selectedUser) return;
+
+  // avoid duplicate handlers
+  socket.off("newMessage");
+
+  socket.on("newMessage", (newMessage) => {
+    const { selectedUser: currentSelected, messages } = get();
+    if (!currentSelected) return;
+
+    // only add if the msg belongs to the currently open conversation
+    const isForCurrentChat =
+      newMessage.senderId === currentSelected._id ||
+      newMessage.receiverId === currentSelected._id;
+
+    if (!isForCurrentChat) return;
+
+    set({ messages: [...messages, newMessage] });
+
+    if (isSoundEnabled) {
+      notificationSound.currentTime = 0;
+      notificationSound
+        .play()
+        .catch((e) => console.log("Auto play failed:", e));
+    }
+  });
+},
+
+unsubscribeFromMessages: () => {
+  const socket = useAuthStore.getState().socket;
+  if (socket) socket.off("newMessage");
+},
+
 }))
