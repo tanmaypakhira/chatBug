@@ -5,15 +5,26 @@ import NoChatsFound from "./NoChatsFound";
 import { useAuthStore } from "../store/useAuthStore";
 
 function ChatsList() {
-  const { getMyChatPartners, chats, isUsersLoading, setSelectedUser } = useChatStore();
-  const { onlineUsers } = useAuthStore();
+  const {
+    getMyChatPartners,
+    chats,
+    isUsersLoading,
+    setSelectedUser,
+    activeTab,
+  } = useChatStore();
+
+  // default onlineUsers to [] so includes() never crashes
+  const { onlineUsers = [] } = useAuthStore();
 
   useEffect(() => {
-    getMyChatPartners();
-  }, [getMyChatPartners]);
+    if (activeTab === "chats") {
+      getMyChatPartners();
+    }
+  }, [activeTab, getMyChatPartners]);
 
-  if (isUsersLoading) return <UsersLoadingSkeleton />;
-  if (chats.length === 0) return <NoChatsFound />;
+  if (isUsersLoading && activeTab === "chats") return <UsersLoadingSkeleton />;
+  if (!isUsersLoading && chats.length === 0)
+    return <NoChatsFound />; // e.g. "No chats yet, start one from Contacts"
 
   return (
     <>
@@ -24,12 +35,18 @@ function ChatsList() {
           onClick={() => setSelectedUser(chat)}
         >
           <div className="flex items-center gap-3">
-            <div className={`avatar ${onlineUsers.includes(chat._id) ? "online" : "offline"}`}>   
+            <div
+              className={`avatar ${
+                onlineUsers.includes(chat._id) ? "online" : "offline"
+              }`}
+            >
               <div className="size-12 rounded-full">
                 <img src={chat.profilePic || "/avatar.png"} alt={chat.fullname} />
               </div>
             </div>
-            <h4 className="text-slate-200 font-medium truncate">{chat.fullname}</h4>
+            <h4 className="text-slate-200 font-medium truncate">
+              {chat.fullname}
+            </h4>
           </div>
         </div>
       ))}
