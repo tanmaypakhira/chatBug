@@ -1,113 +1,125 @@
-import { create } from 'zustand';
-import { axiosInstance } from '../lib/axios';
-import toast from 'react-hot-toast';
-import { io } from 'socket.io-client';
+import { create } from "zustand";
+import { axiosInstance } from "../lib/axios";
+import toast from "react-hot-toast";
+import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
+const BASE_URL =
+  import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
 
 export const useAuthStore = create((set, get) => ({
-    authUser: null,
-    isCheckingAuth: true,
-    isSigningUp: false,
-    isLoggingIn: false,
-    socket: null,
-    onlineUsers: [],
+  authUser: null,
+  isCheckingAuth: true,
+  isSigningUp: false,
+  isLoggingIn: false,
+  socket: null,
+  onlineUsers: [],
 
-    checkAuth: async () => {
-        try {
-            const res = await axiosInstance.get("/auth/check");
-            set({ authUser: res.data});
-            get().connectSocket();
-        } catch (error) {
-            console.log("Error in authCheck:", error);
-            set({ authUser: null});
-        } finally {
-            set({ isCheckingAuth: false});
-        }
-    },
+  checkAuth: async () => {
+    try {
+      const res = await axiosInstance.get("/auth/check");
+      set({ authUser: res.data });
+      get().connectSocket();
+    } catch (error) {
+      console.log("Error in authCheck:", error);
+      set({ authUser: null });
+    } finally {
+      set({ isCheckingAuth: false });
+    }
+  },
 
-    signup: async (data) => {
-        set({isSigningUp: true})
-        try {
-            const res = await axiosInstance.post("/auth/signup", data);
-            set({ authUser: res.data});
+  signup: async (data) => {
+    set({ isSigningUp: true });
+    try {
+      const res = await axiosInstance.post("/auth/signup", data);
+      set({ authUser: res.data });
 
-            toast.success("Account created successfully!")
+      toast.success("Account created successfully!");
 
-            get().connectSocket();
-        } catch (error) {
-            toast.error(error.response.data.message);
-        } finally {
-            set({ isSigningUp: false});
-        }
-    },
+      get().connectSocket();
+    } catch (error) {
+      toast.error(error.response.data.message);
+    } finally {
+      set({ isSigningUp: false });
+    }
+  },
 
-    login: async (data) => {
-        set({isLoggingIn: true})
-        try {
-            const res = await axiosInstance.post("/auth/login", data);
-            set({ authUser: res.data});
+  login: async (data) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/auth/login", data);
+      set({ authUser: res.data });
 
-            toast.success("Login successfully");
+      toast.success("Login successfully");
 
-            get().connectSocket();
-        } catch (error) {
-            toast.error(error.response.data.message);
-        } finally {
-            set({ isLoggingIn: false});
-        }
-    },
+      get().connectSocket();
+    } catch (error) {
+      toast.error(error.response.data.message);
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
 
-    logout: async () => {
-        try {
-            await axiosInstance.post("/auth/logout");
-            set({ authUser: null });
-            toast.success("Logged out successfully");
-            get().disconnectSocket();
-        } catch (error){
-            toast.error("Error logging out");
-            console.log("Logout error:", error);
-        }
-    },
+  logout: async () => {
+    try {
+      await axiosInstance.post("/auth/logout");
+      set({ authUser: null });
+      toast.success("Logged out successfully");
+      get().disconnectSocket();
+    } catch (error) {
+      toast.error("Error logging out");
+      console.log("Logout error:", error);
+    }
+  },
 
-    updateProfile: async(data) => {
-        try {
-            const res = await axiosInstance.put("/auth/update-profile", data);
-            set({ authUser: res.data });
-            toast.success("Profile updated successfully");
-        } catch (error) {
-            console.log("Error in update profile:", error);
-            toast.error(error.response.data.message);
-        }
-    },
+  updateProfile: async (data) => {
+    try {
+      const res = await axiosInstance.put("/auth/update-profile", data);
+      set({ authUser: res.data });
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      console.log("Error in update profile:", error);
 
-    connectSocket: () => {
-        const { authUser } = get();
-        if (!authUser || get().socket?.connected) return;
+      let message = "Failed to update profile";
 
-        const socket = io(BASE_URL, {
-          withCredentials: true, // this ensures cookies are sent with the connection
-        });
+      // 413 from Railway – payload too large (image too big)
+      if (error?.response?.status === 413) {
+        message =
+          "Image is too large. Please upload a smaller profile picture.";
+      } else if (error?.response?.data?.message) {
+        message = error.response.data.message;
+      }
 
-        // socket.connect();
+      toast.error(message);
+    }
+  },
 
-        set({ socket });
+  connectSocket: () => {
+    const { authUser } = get();
+    if (!authUser || get().socket?.connected) return;
 
-        socket.on("connect", () => {
-        console.log("✅ Connected to socket server, id:", socket.id);
-        });
+    const socket = io(BASE_URL, {
+      withCredentials: true, // this ensures cookies are sent with the connection
+    });
 
-        socket.on("connect_error", (err) => {
-        console.log("❌ Socket connection error:", err.message);
-        });
+    // socket.connect();
 
-        // listen for online users event
-        socket.on("getOnlineUsers", (userIds) => {
-          set({ onlineUsers: userIds });
-        });
-    },    
+    set({ socket });
 
-    disconnectSocket: () => {
-        if (get().socket?.connected) get().socket.disconnect();
-    },
+    socket.on("connect", () => {
+      console.log("✅ Connected to socket server, id:", socket.id);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.log("❌ Socket connection error:", err.message);
+    });
+
+    // listen for online users event
+    socket.on("getOnlineUsers", (userIds) => {
+      set({ onlineUsers: userIds });
+    });
+  },
+
+  disconnectSocket: () => {
+    if (get().socket?.connected) get().socket.disconnect();
+  },
 }));
