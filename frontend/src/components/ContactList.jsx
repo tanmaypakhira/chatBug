@@ -4,14 +4,24 @@ import UsersLoadingSkeleton from "./UsersLoadingSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 
 function ContactList() {
-  const { getAllContacts, allContacts, setSelectedUser, isUsersLoading } = useChatStore();
-  const { onlineUsers } = useAuthStore();
+  const {
+    getAllContacts,
+    allContacts,
+    setSelectedUser,
+    isUsersLoading,
+    activeTab,
+  } = useChatStore();
+
+  const { onlineUsers = [] } = useAuthStore();
 
   useEffect(() => {
-    getAllContacts();
-  }, [getAllContacts]);
+    if (activeTab === "contacts") {
+      getAllContacts();
+    }
+  }, [activeTab, getAllContacts]);
 
-  if (isUsersLoading) return <UsersLoadingSkeleton />;
+  if (isUsersLoading && activeTab === "contacts")
+    return <UsersLoadingSkeleton />;
 
   return (
     <>
@@ -22,12 +32,18 @@ function ContactList() {
           onClick={() => setSelectedUser(contact)}
         >
           <div className="flex items-center gap-3">
-            <div className={`avatar ${onlineUsers.includes(contact._id) ? "online" : "offline"}`}>
+            <div
+              className={`avatar ${
+                onlineUsers.includes(contact._id) ? "online" : "offline"
+              }`}
+            >
               <div className="size-12 rounded-full">
-                <img src={contact.profilePic || "/avatar.png"} />
+                <img src={contact.profilePic || "/avatar.png"} alt={contact.fullname} />
               </div>
             </div>
-            <h4 className="text-slate-200 font-medium">{contact.fullname}</h4>
+            <h4 className="text-slate-200 font-medium">
+              {contact.fullname}
+            </h4>
           </div>
         </div>
       ))}
