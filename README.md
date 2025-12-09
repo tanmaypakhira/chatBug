@@ -1,4 +1,4 @@
-#ChatBug – Real-Time Chat Application
+# ChatBug – Real-Time Chat Application
 
 ChatBug is a modern, secure, full-stack real-time chat application built using React, Node.js, Socket.io, and MongoDB. It provides instant messaging, online user tracking, profile management, and seamless communication with a clean UI.
 
